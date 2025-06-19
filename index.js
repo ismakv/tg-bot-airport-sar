@@ -129,16 +129,28 @@ async function checkFlights() {
 
       const when = new Date(timeStr);
       const diff = Math.round((when - saratovNow) / 60000);   // в минутах
-      if (diff !== 60) return;
+      
+      // Не показываем прошедшие рейсы и рейсы более чем за 65 минут
+      if (diff < 0 || diff > 65) return;
 
       const num  = f.thread?.number || '???';
       const city = type === 'dep'
         ? (f.thread?.to?.title   || '')
         : (f.thread?.from?.title || '');
 
-      const msg  = type === 'dep'
-        ? `✈️ Рейс *${num}* вылетает в ${city} через час (в ${fmtTime(when)}).`
-        : `🛬 Рейс *${num}* из ${city} прибудет через час (в ${fmtTime(when)}).`;
+      let msg;
+      if (diff >= 55 && diff <= 65) {
+        // Стандартное уведомление за час
+        msg = type === 'dep'
+          ? `✈️ Рейс *${num}* вылетает в ${city} через час (в ${fmtTime(when)}).`
+          : `🛬 Рейс *${num}* из ${city} прибудет через час (в ${fmtTime(when)}).`;
+      } else {
+        // Срочное уведомление если осталось меньше часа
+        const minutes = Math.max(diff, 0);
+        msg = type === 'dep'
+          ? `⚠️ Скоро вылет! Рейс *${num}* вылетает в ${city} через ${minutes} мин (в ${fmtTime(when)}).`
+          : `⚠️ Скоро прилет! Рейс *${num}* из ${city} прибудет через ${minutes} мин (в ${fmtTime(when)}).`;
+      }
 
       toSend.push({ msg, key: `${type}|${num}|${when.toISOString()}` });
     });
