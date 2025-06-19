@@ -87,8 +87,71 @@ bot.command('unsubscribe', async ctx => {
 });
 
 bot.help(ctx => ctx.reply(
-  '/subscribe — включить уведомления\n/unsubscribe — выключить\n/help — справка'
+  '/subscribe — включить уведомления\n/unsubscribe — выключить\n/schedule или /расписание — показать все рейсы на сутки\n/help — справка'
 ));
+
+// Функция форматирования расписания
+function formatSchedule(flights, type) {
+  if (!flights || flights.length === 0) return '';
+  
+  const title = type === 'dep' ? '✈️ Вылеты:' : '🛬 Прилёты:';
+  const lines = flights.map(f => {
+    const timeStr = type === 'dep' ? (f.departure || f.departure_time) : (f.arrival || f.arrival_time);
+    const when = new Date(timeStr);
+    const num = f.thread?.number || '???';
+    const city = type === 'dep' ? (f.thread?.to?.title || '') : (f.thread?.from?.title || '');
+    return `${fmtTime(when)} - ${num} ${type === 'dep' ? 'в' : 'из'} ${city}`;
+  });
+  
+  return `${title}\n${lines.join('\n')}`;
+}
+
+// Команда для получения расписания
+async function sendSchedule(ctx) {
+  try {
+    ctx.reply('Загружаю расписание...');
+    
+    const [departures, arrivals] = await Promise.all([
+      fetchFlights('departure'),
+      fetchFlights('arrival')
+    ]);
+
+    // Сортируем рейсы по времени
+    const sortFlights = (flights, type) => {
+      if (!flights) return [];
+      return [...flights].sort((a, b) => {
+        const timeA = new Date(type === 'dep' ? (a.departure || a.departure_time) : (a.arrival || a.arrival_time));
+        const timeB = new Date(type === 'dep' ? (b.departure || b.departure_time) : (b.arrival || b.arrival_time));
+        return timeA - timeB;
+      });
+    };
+
+    const sortedDepartures = sortFlights(departures, 'dep');
+    const sortedArrivals = sortFlights(arrivals, 'arr');
+
+    const depText = formatSchedule(sortedDepartures, 'dep');
+    const arrText = formatSchedule(sortedArrivals, 'arr');
+
+    const message = [
+      '📅 Расписание рейсов на сегодня:',
+      '',
+      depText,
+      '',
+      arrText,
+      '',
+      '🕒 Время указано по Саратову (UTC+4)'
+    ].filter(Boolean).join('\n');
+
+    await ctx.reply(message);
+  } catch (e) {
+    console.error('Ошибка при получении расписания:', e);
+    ctx.reply('Извините, не удалось загрузить расписание. Попробуйте позже.');
+  }
+}
+
+// Регистрируем команды для расписания
+bot.command('schedule', sendSchedule);
+bot.command('расписание', sendSchedule);
 
 // ----- работа с Яндекс.Расписаниями -----
 const STATION = 'GSV';       // IATA аэропорта Гагарин
