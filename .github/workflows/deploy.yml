@@ -30,7 +30,7 @@ jobs:
           context: .
           push: true
           tags: |
-            tags: ghcr.io/${{ github.repository }}:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
 
   deploy:
     needs: build
