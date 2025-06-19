@@ -46,7 +46,7 @@ jobs:
           script: |
             echo "TOKEN: $GHCR_READ_TOKEN"
             echo "TEST: $TEST_VAR"
-            docker login ghcr.io -u ismakv -p $GHCR_READ_TOKEN
+            docker login ghcr.io -u ismakv -p "${{ secrets.GHCR_READ_TOKEN }}"
             cd /opt/airport-bot
             docker compose pull
             docker compose up -d --remove-orphans
