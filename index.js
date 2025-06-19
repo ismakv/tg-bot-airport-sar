@@ -67,7 +67,7 @@ function fmtTime(date) {
 
 // ----- Telegram-команды -----
 bot.start(ctx => ctx.reply(
-  'Привет! /subscribe — получать уведомления, /unsubscribe — отписаться.'
+  'Привет! /subscribe — получать уведомления, /unsubscribe — отписаться. /schedule  — показать все рейсы на сутки'
 ));
 
 bot.command('subscribe', async ctx => {
